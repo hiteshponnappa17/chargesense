@@ -1,0 +1,20 @@
+{
+  "name": "chargesense",
+  "version": "1.0.0",
+  "private": true,
+  "description": "ChargeSense — a peer-to-peer platform for EV charger sharing with a deterministic FCFS scheduler.",
+  "scripts": {
+    "postinstall": "npm --prefix server install && npm --prefix client install",
+    "install:all": "npm install",
+    "dev": "concurrently -n server,client -c green,cyan \"npm --prefix server run dev\" \"npm --prefix client run dev\"",
+    "dev:memory": "concurrently -n mongo,server,client -c magenta,green,cyan \"npm --prefix server run mongo:memory\" \"npm --prefix server run dev\" \"npm --prefix client run dev\"",
+    "mongo:memory": "npm --prefix server run mongo:memory",
+    "seed": "npm --prefix server run seed",
+    "build": "npm --prefix server run build && npm --prefix client run build",
+    "typecheck": "npm --prefix server run typecheck && npm --prefix client run typecheck",
+    "test:api": "npm --prefix server run test:api"
+  },
+  "devDependencies": {
+    "concurrently": "^9.1.2"
+  }
+}

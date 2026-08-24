@@ -1,0 +1,38 @@
+# Dependencies
+node_modules/
+**/node_modules/
+
+# Build output
+dist/
+build/
+client/dist/
+server/dist/
+
+# Env files (never commit real secrets)
+.env
+.env.local
+server/.env
+client/.env
+
+# Local in-memory MongoDB data + binary cache
+.data/
+server/.data/
+.cache/
+**/.mongodb-binaries/
+
+# Logs
+*.log
+npm-debug.log*
+logs/
+
+# Editor / OS
+.DS_Store
+Thumbs.db
+.idea/
+.vscode/*
+!.vscode/extensions.json
+.claude/
+
+# Vite
+client/.vite/
+*.local
