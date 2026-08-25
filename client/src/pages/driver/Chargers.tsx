@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { List, Map as MapIcon, Search, SlidersHorizontal } from 'lucide-react';
 import { PageHeader } from '@/components/layout/PageHeader';
 import { Input } from '@/components/ui/Input';
@@ -8,11 +8,14 @@ import { EmptyState } from '@/components/ui/EmptyState';
 import { ErrorState } from '@/components/ui/ErrorState';
 import { ChargerCard } from '@/components/charger/ChargerCard';
 import { ChargersMap } from '@/components/charger/ChargersMap';
+import { LocationSelector } from '@/components/location/LocationSelector';
 import { listChargers, type ChargerFilters } from '@/services/charger.service';
 import { CONNECTOR_TYPES } from '@/lib/constants';
+import { usePrefs } from '@/hooks/usePrefs';
 import { cn } from '@/lib/cn';
 import type { Charger } from '@/types';
 
+const NEAREST_SORT = { value: 'nearest', label: 'Nearest' };
 const SORTS = [
   { value: 'rating', label: 'Top rated' },
   { value: 'price', label: 'Lowest price' },
@@ -20,6 +23,8 @@ const SORTS = [
 ];
 
 export default function Chargers() {
+  const { location, radiusKm } = usePrefs();
+
   const [search, setSearch] = useState('');
   const [debounced, setDebounced] = useState('');
   const [connector, setConnector] = useState('');
@@ -38,14 +43,26 @@ export default function Chargers() {
     return () => clearTimeout(t);
   }, [search]);
 
+  // When the driver first sets a location, default the sort to "Nearest".
+  const hadLocation = useRef(Boolean(location));
+  useEffect(() => {
+    if (location && !hadLocation.current) setSort('nearest');
+    hadLocation.current = Boolean(location);
+  }, [location]);
+
+  const sortOptions = location ? [NEAREST_SORT, ...SORTS] : SORTS;
+
   const filters = useMemo<ChargerFilters>(
     () => ({
       search: debounced || undefined,
       connectorType: connector || undefined,
       sort: sort as ChargerFilters['sort'],
       availableNow: availableNow || undefined,
+      lat: location?.latitude,
+      lng: location?.longitude,
+      radiusKm: location ? radiusKm : undefined,
     }),
-    [debounced, connector, sort, availableNow],
+    [debounced, connector, sort, availableNow, location, radiusKm],
   );
 
   const load = useCallback(() => {
@@ -66,6 +83,8 @@ export default function Chargers() {
         subtitle="Browse hosted chargers around Mysuru and reserve a slot."
       />
 
+      <LocationSelector />
+
       {/* Filters */}
       <div className="rounded-2xl border border-line bg-white p-4 shadow-card">
         <div className="grid gap-3 md:grid-cols-[1fr_auto_auto_auto]">
@@ -82,7 +101,7 @@ export default function Chargers() {
             className="md:w-44"
           />
           <Select
-            options={SORTS}
+            options={sortOptions}
             value={sort}
             onChange={(e) => setSort(e.target.value)}
             className="md:w-40"
@@ -150,8 +169,12 @@ export default function Chargers() {
           ) : chargers.length === 0 ? (
             <EmptyState
               icon={Search}
-              title="No chargers match your filters"
-              description="Try widening your search or turning off the “Open now” filter."
+              title={location ? `No chargers within ${radiusKm} km` : 'No chargers match your filters'}
+              description={
+                location
+                  ? 'Try a larger radius, a different area, or turn off the “Open now” filter.'
+                  : 'Try widening your search or turning off the “Open now” filter.'
+              }
             />
           ) : (
             <div className="grid gap-4 sm:grid-cols-2">
@@ -175,6 +198,7 @@ export default function Chargers() {
               chargers={chargers}
               selectedId={selectedId}
               onSelectCharger={setSelectedId}
+              userLocation={location}
               className="h-[60vh] lg:h-[calc(100vh-8rem)]"
             />
           </div>

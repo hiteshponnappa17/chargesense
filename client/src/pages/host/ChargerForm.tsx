@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useMemo, useState, type FormEvent } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
-import { ArrowLeft, Save } from 'lucide-react';
+import { ArrowLeft, LocateFixed, MapPin, Save } from 'lucide-react';
 import { PageHeader } from '@/components/layout/PageHeader';
 import { Card, CardHeader } from '@/components/ui/Card';
 import { Input } from '@/components/ui/Input';
@@ -41,6 +41,7 @@ export default function ChargerForm() {
   const [form, setForm] = useState<ChargerFormValues>(DEFAULTS);
   const [loading, setLoading] = useState(isEdit);
   const [saving, setSaving] = useState(false);
+  const [locating, setLocating] = useState(false);
 
   const loadExisting = useCallback(() => {
     if (!id) return;
@@ -70,6 +71,34 @@ export default function ChargerForm() {
   useEffect(loadExisting, [loadExisting]);
 
   const patch = (fields: Partial<ChargerFormValues>) => setForm((f) => ({ ...f, ...fields }));
+
+  const setCoords = (lat: number, lng: number) =>
+    patch({ latitude: Number(lat.toFixed(6)), longitude: Number(lng.toFixed(6)) });
+
+  const useMyLocation = () => {
+    if (!('geolocation' in navigator)) {
+      toast.error('Location unavailable', 'This device does not support geolocation.');
+      return;
+    }
+    setLocating(true);
+    navigator.geolocation.getCurrentPosition(
+      (pos) => {
+        setCoords(pos.coords.latitude, pos.coords.longitude);
+        setLocating(false);
+        toast.success('Location set from GPS');
+      },
+      (err) => {
+        setLocating(false);
+        toast.error(
+          'Location unavailable',
+          err.code === err.PERMISSION_DENIED
+            ? 'Permission denied — click the map to drop the pin instead.'
+            : 'Could not get your location. Click the map to place the pin.',
+        );
+      },
+      { enableHighAccuracy: true, timeout: 10_000 },
+    );
+  };
 
   const toggleAmenity = (a: Amenity) =>
     setForm((f) => ({
@@ -258,30 +287,37 @@ export default function ChargerForm() {
         {/* Location + submit */}
         <div className="space-y-6">
           <Card>
-            <CardHeader title="Location" description="Set the map coordinates for your charger." />
-            <div className="mt-4 grid grid-cols-2 gap-4">
-              <Input
-                label="Latitude"
-                type="number"
-                step="any"
-                required
-                value={String(form.latitude)}
-                onChange={(e) => patch({ latitude: Number(e.target.value) })}
-              />
-              <Input
-                label="Longitude"
-                type="number"
-                step="any"
-                required
-                value={String(form.longitude)}
-                onChange={(e) => patch({ longitude: Number(e.target.value) })}
-              />
-            </div>
+            <CardHeader
+              title="Location"
+              description="Click the map or drag the pin to set the exact spot."
+              action={
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  loading={locating}
+                  leftIcon={<LocateFixed className="h-4 w-4" />}
+                  onClick={useMyLocation}
+                >
+                  Use my location
+                </Button>
+              }
+            />
             <div className="mt-4">
-              <ChargersMap chargers={[previewCharger]} selectedId="preview" className="h-56" />
-              <p className="mt-2 text-xs text-muted">
-                Tip: find your spot on Google Maps, right-click it and copy the coordinates.
-              </p>
+              <ChargersMap
+                chargers={[previewCharger]}
+                selectedId="preview"
+                interactive
+                onPick={setCoords}
+                className="h-56"
+              />
+              <div className="mt-3 flex items-center gap-2 rounded-xl bg-slate-50 px-3 py-2 text-sm ring-1 ring-inset ring-line">
+                <MapPin className="h-4 w-4 shrink-0 text-brand-600" />
+                <span className="text-muted">Coordinates</span>
+                <span className="ml-auto font-medium tabular-nums text-ink">
+                  {form.latitude.toFixed(6)}, {form.longitude.toFixed(6)}
+                </span>
+              </div>
             </div>
           </Card>
 

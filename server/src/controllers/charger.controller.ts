@@ -33,6 +33,7 @@ export const list = asyncHandler(async (req: Request, res: Response) => {
       : undefined,
     lat: parseNum(q.lat),
     lng: parseNum(q.lng),
+    radiusKm: parseNum(q.radiusKm),
   };
   const chargers = await listChargers(filters);
   return sendSuccess(res, { chargers, count: chargers.length });

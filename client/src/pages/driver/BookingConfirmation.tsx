@@ -6,6 +6,7 @@ import {
   Clock,
   Hourglass,
   MapPin,
+  Navigation,
   Zap,
 } from 'lucide-react';
 import { Card } from '@/components/ui/Card';
@@ -21,6 +22,7 @@ import {
   formatTimeRange,
   relativeDayLabel,
 } from '@/lib/format';
+import { directionsUrl } from '@/lib/maps';
 import { cn } from '@/lib/cn';
 import type { Booking, Charger } from '@/types';
 
@@ -44,8 +46,8 @@ export default function BookingConfirmation() {
   if (loading) return <Skeleton className="mx-auto h-96 max-w-xl rounded-2xl" />;
   if (error || !booking) return <ErrorState title="Booking not found" onRetry={load} />;
 
-  const chargerName =
-    typeof booking.chargerId === 'object' ? (booking.chargerId as Charger).name : 'Charger';
+  const charger = typeof booking.chargerId === 'object' ? (booking.chargerId as Charger) : null;
+  const chargerName = charger?.name ?? 'Charger';
   const isPending = booking.status === 'pending';
 
   return (
@@ -75,9 +77,21 @@ export default function BookingConfirmation() {
           <StatusBadge status={booking.status} />
         </div>
 
-        <div className="mt-4 flex items-center gap-2 text-ink">
-          <MapPin className="h-4 w-4 text-brand-600" />
-          <span className="font-semibold">{chargerName}</span>
+        <div className="mt-4 flex items-center justify-between gap-2">
+          <div className="flex items-center gap-2 text-ink">
+            <MapPin className="h-4 w-4 text-brand-600" />
+            <span className="font-semibold">{chargerName}</span>
+          </div>
+          {charger && (
+            <a
+              href={directionsUrl(charger)}
+              target="_blank"
+              rel="noreferrer"
+              className={buttonClasses({ variant: 'outline', size: 'sm' })}
+            >
+              <Navigation className="h-4 w-4" /> Directions
+            </a>
+          )}
         </div>
 
         <dl className="mt-4 space-y-3 border-t border-line pt-4 text-sm">

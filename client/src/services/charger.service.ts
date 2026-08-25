@@ -11,6 +11,7 @@ export interface ChargerFilters {
   sort?: 'nearest' | 'price' | 'power' | 'rating';
   lat?: number;
   lng?: number;
+  radiusKm?: number;
 }
 
 function toQuery(filters: ChargerFilters): string {

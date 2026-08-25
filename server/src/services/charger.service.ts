@@ -15,6 +15,8 @@ export interface ChargerFilters {
   sort?: 'nearest' | 'price' | 'power' | 'rating';
   lat?: number;
   lng?: number;
+  /** Only keep chargers within this many km of lat/lng (requires lat+lng). */
+  radiusKm?: number;
 }
 
 /** True if `now` (IST wall clock) is inside the charger's daily window. */
@@ -58,6 +60,15 @@ export async function listChargers(filters: ChargerFilters) {
   });
 
   if (filters.availableNow) results = results.filter((c) => c.isOpenNow);
+
+  // Radius filter: only meaningful when we have an origin to measure from.
+  if (
+    filters.radiusKm !== undefined &&
+    filters.lat !== undefined &&
+    filters.lng !== undefined
+  ) {
+    results = results.filter((c) => c.distanceKm !== null && c.distanceKm <= filters.radiusKm!);
+  }
 
   switch (filters.sort) {
     case 'price':

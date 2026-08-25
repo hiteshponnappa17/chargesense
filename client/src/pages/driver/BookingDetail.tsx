@@ -8,10 +8,11 @@ import {
   Clock,
   IndianRupee,
   MapPin,
+  Navigation,
   Zap,
 } from 'lucide-react';
 import { Card } from '@/components/ui/Card';
-import { Button } from '@/components/ui/Button';
+import { Button, buttonClasses } from '@/components/ui/Button';
 import { Skeleton } from '@/components/ui/Skeleton';
 import { ErrorState } from '@/components/ui/ErrorState';
 import { ConfirmDialog } from '@/components/ui/ConfirmDialog';
@@ -20,6 +21,7 @@ import { isCancellable } from '@/components/booking/BookingCard';
 import { useToast } from '@/hooks/useToast';
 import { cancelBooking, getBooking } from '@/services/booking.service';
 import { errorMessage } from '@/lib/api';
+import { directionsUrl } from '@/lib/maps';
 import {
   formatCurrency,
   formatDateTime,
@@ -155,6 +157,16 @@ export default function BookingDetail() {
             >
               View charger
             </Link>
+          )}
+          {charger && (
+            <a
+              href={directionsUrl(charger)}
+              target="_blank"
+              rel="noreferrer"
+              className={buttonClasses({ variant: 'outline' })}
+            >
+              <Navigation className="h-4 w-4" /> Get directions
+            </a>
           )}
           {canCancel && (
             <Button variant="danger" onClick={() => setConfirmOpen(true)}>

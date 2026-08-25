@@ -8,12 +8,13 @@ import {
   Gauge,
   IndianRupee,
   MapPin,
+  Navigation,
   Star,
   User,
   Zap,
 } from 'lucide-react';
 import { Card, CardHeader } from '@/components/ui/Card';
-import { Button } from '@/components/ui/Button';
+import { Button, buttonClasses } from '@/components/ui/Button';
 import { Badge } from '@/components/ui/Badge';
 import { Input } from '@/components/ui/Input';
 import { Select } from '@/components/ui/Select';
@@ -29,6 +30,7 @@ import { listCars } from '@/services/car.service';
 import { computeEstimate } from '@/services/estimate.service';
 import { createBooking } from '@/services/booking.service';
 import { errorMessage } from '@/lib/api';
+import { directionsUrl } from '@/lib/maps';
 import { BATTERY_PRESETS, CONNECTOR_META, chargerSpeedTier } from '@/lib/constants';
 import {
   formatCurrency,
@@ -269,6 +271,20 @@ export default function ChargerDetail() {
 
           <Card padded={false} className="overflow-hidden">
             <ChargersMap chargers={[charger]} selectedId={charger._id} className="h-64 rounded-none border-0" />
+            <div className="flex items-center justify-between gap-3 border-t border-line p-4">
+              <p className="flex items-center gap-1.5 text-sm text-muted">
+                <MapPin className="h-4 w-4 shrink-0" />
+                {charger.address}, {charger.city}
+              </p>
+              <a
+                href={directionsUrl(charger)}
+                target="_blank"
+                rel="noreferrer"
+                className={buttonClasses({ variant: 'outline', size: 'sm' })}
+              >
+                <Navigation className="h-4 w-4" /> Get directions
+              </a>
+            </div>
           </Card>
         </div>
 

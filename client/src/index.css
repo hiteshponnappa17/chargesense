@@ -124,3 +124,18 @@
     opacity: 0;
   }
 }
+
+/* "You are here" dot for the driver's chosen search origin. */
+.cs-userdot-wrap {
+  background: transparent;
+  border: 0;
+}
+.cs-userdot {
+  display: block;
+  height: 18px;
+  width: 18px;
+  border-radius: 9999px;
+  background: #2563eb;
+  border: 2.5px solid #ffffff;
+  box-shadow: 0 0 0 2px rgba(37, 99, 235, 0.35), 0 2px 4px rgba(15, 23, 42, 0.3);
+}
