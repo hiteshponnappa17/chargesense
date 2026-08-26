@@ -270,11 +270,32 @@ export async function reprocessQueue(chargerId: string): Promise<number> {
   return promoted;
 }
 
+/**
+ * Settle bookings whose reserved window has fully elapsed. Confirmed sessions
+ * become `completed`; still-`pending` waitlist requests that never won the slot
+ * become `rejected`. Idempotent and cheap (matches nothing once everything due
+ * is settled), so it runs lazily on read paths instead of needing a background
+ * job. Only affects bookings with `endTime` strictly in the past, so in-progress
+ * and future bookings — and therefore FCFS conflict checks — are untouched.
+ */
+export async function settleElapsedBookings(): Promise<void> {
+  const now = new Date();
+  await Booking.updateMany(
+    { status: 'confirmed', endTime: { $lt: now } },
+    { $set: { status: 'completed' } },
+  );
+  await Booking.updateMany(
+    { status: 'pending', endTime: { $lt: now } },
+    { $set: { status: 'rejected' } },
+  );
+}
+
 // ---------------------------------------------------------------------------
 // Queries
 // ---------------------------------------------------------------------------
 
 export async function getUserBookings(userId: string, status?: string) {
+  await settleElapsedBookings();
   const query: Record<string, unknown> = { userId };
   if (status) query.status = status;
   return Booking.find(query)
@@ -285,6 +306,7 @@ export async function getUserBookings(userId: string, status?: string) {
 }
 
 export async function getBookingById(bookingId: string, requesterId: string) {
+  await settleElapsedBookings();
   const booking = await Booking.findById(bookingId)
     .populate(POPULATE_CHARGER)
     .populate({ path: 'carModelId', select: 'brand model batteryCapacityKWh maxChargingPowerKW' })
@@ -303,6 +325,7 @@ export async function getBookingById(bookingId: string, requesterId: string) {
 }
 
 export async function getHostBookings(hostId: string, status?: string) {
+  await settleElapsedBookings();
   const chargers = await Charger.find({ ownerId: hostId }).select('_id').lean();
   const chargerIds = chargers.map((c) => c._id);
   const query: Record<string, unknown> = { chargerId: { $in: chargerIds } };
@@ -316,6 +339,7 @@ export async function getHostBookings(hostId: string, status?: string) {
 
 /** Availability view for a charger on a given IST day (busy slots + window). */
 export async function getChargerAvailability(chargerId: string, dateISO?: string) {
+  await settleElapsedBookings();
   const charger = await Charger.findById(chargerId).lean();
   if (!charger) throw ApiError.notFound('Charger not found', 'CHARGER_NOT_FOUND');
 
