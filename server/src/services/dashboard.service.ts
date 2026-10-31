@@ -1,5 +1,6 @@
 import { Booking } from '../models/Booking';
 import { Charger } from '../models/Charger';
+import { settleElapsedBookings } from './booking.service';
 import { parseHHmm, IST_OFFSET_MINUTES, istDayNumber } from '../utils/time';
 
 const DAY_MS = 86_400_000;
@@ -19,6 +20,7 @@ function istParts(date: Date) {
 const WEEKDAYS = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
 
 export async function getDriverDashboard(userId: string) {
+  await settleElapsedBookings();
   const now = new Date();
   const bookings = await Booking.find({ userId })
     .populate({ path: 'chargerId', select: 'name city address connectorType powerKW pricePerKWh' })
@@ -61,6 +63,7 @@ export async function getDriverDashboard(userId: string) {
 }
 
 export async function getHostDashboard(hostId: string) {
+  await settleElapsedBookings();
   const now = new Date();
   const chargers = await Charger.find({ ownerId: hostId }).lean();
   const chargerIds = chargers.map((c) => c._id);
